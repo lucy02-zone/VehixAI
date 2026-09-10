@@ -13,9 +13,18 @@ if not cap.isOpened():
 
 print("Webcam opened successfully!")
 
+# Vehicle class IDs
+# COCO dataset classes:
+# car = 2
+# motorcycle = 3
+# bus = 5
+# truck = 7
+
+vehicle_classes = [2, 3, 5, 7]
+
 while True:
 
-    # Read frame from webcam
+    # Read webcam frame
     ret, frame = cap.read()
 
     if not ret:
@@ -23,14 +32,18 @@ while True:
         break
 
     # Run YOLO
-    results = model(frame)
+    results = model(
+        frame,
+        classes=vehicle_classes,
+        conf=0.40
+    )
 
     # Draw detections
     annotated_frame = results[0].plot()
 
     # Display
     cv2.imshow(
-        "AI Traffic Monitoring - YOLO",
+        "AI Traffic Monitoring - Vehicles",
         annotated_frame
     )
 
@@ -38,7 +51,7 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
-# Release webcam
+# Release
 cap.release()
 cv2.destroyAllWindows()
 
