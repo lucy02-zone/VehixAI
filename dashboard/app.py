@@ -234,7 +234,8 @@ def save_data(cars, motorcycles, buses, trucks, up, down, current, density):
 # ---------------------------------------------------------
 class TrafficProcessor(VideoProcessorBase):
     def __init__(self):
-        self.model = YOLO("yolo26n.pt")
+        model_path = "yolo26n.pt" if os.path.exists("yolo26n.pt") else "yolov8n.pt"
+        self.model = YOLO(model_path)
         self.previous_positions = {}
         self.counted_ids = set()
 
