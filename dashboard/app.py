@@ -1,7 +1,15 @@
 import streamlit as st
-import pandas as pd
+import cv2
+import av
+import threading
+import csv
 import os
-import time
+from datetime import datetime
+
+from ultralytics import YOLO
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
+from streamlit_autorefresh import st_autorefresh
+
 
 st.set_page_config(
     page_title="AI Traffic Monitoring",
@@ -9,214 +17,503 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🚦 AI-Based Traffic Monitoring System")
-st.subheader("Real-Time Vehicle Analytics Dashboard")
+st.title("🚦 AI-Based Real-Time Traffic Monitoring")
 
-CSV_FILE = "results/traffic_data.csv"
 
-# -----------------------------
-# Check CSV
-# -----------------------------
+VEHICLE_CLASSES = [2, 3, 5, 7]
+CSV_FILE = "results/live_traffic_data.csv"
 
-if not os.path.exists(CSV_FILE):
 
-    st.error(
-        "Traffic data not found. "
-        "Run src/data_logger.py first."
-    )
+os.makedirs("results", exist_ok=True)
 
-    st.stop()
 
-# -----------------------------
-# Load data
-# -----------------------------
+def save_data(
+    cars,
+    motorcycles,
+    buses,
+    trucks,
+    up,
+    down,
+    current,
+    density
+):
 
-data = pd.read_csv(CSV_FILE)
+    file_exists = os.path.exists(CSV_FILE)
 
-if data.empty:
+    total = cars + motorcycles + buses + trucks
 
-    st.warning("No traffic data available.")
+    with open(
+        CSV_FILE,
+        "a",
+        newline=""
+    ) as file:
 
-    st.stop()
+        writer = csv.writer(file)
 
-# -----------------------------
-# Latest data
-# -----------------------------
+        if not file_exists:
 
-latest = data.iloc[-1]
+            writer.writerow([
+                "Timestamp",
+                "Cars",
+                "Motorcycles",
+                "Buses",
+                "Trucks",
+                "Total",
+                "UP",
+                "DOWN",
+                "Current Vehicles",
+                "Density"
+            ])
 
-cars = int(latest["Cars"])
-motorcycles = int(latest["Motorcycles"])
-buses = int(latest["Buses"])
-trucks = int(latest["Trucks"])
+        writer.writerow([
+            datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            cars,
+            motorcycles,
+            buses,
+            trucks,
+            total,
+            up,
+            down,
+            current,
+            density
+        ])
 
-total = int(latest["Total"])
-up = int(latest["UP"])
-down = int(latest["DOWN"])
 
-current = int(latest["Current Vehicles"])
+class TrafficProcessor(VideoProcessorBase):
 
-density = latest["Density"]
+    def __init__(self):
 
-# -----------------------------
-# Metrics
-# -----------------------------
+        self.model = YOLO("yolo26n.pt")
 
-col1, col2, col3, col4 = st.columns(4)
+        self.previous_positions = {}
+        self.counted_ids = set()
 
-with col1:
-    st.metric(
-        "🚗 Cars",
+        self.car_count = 0
+        self.motorcycle_count = 0
+        self.bus_count = 0
+        self.truck_count = 0
+
+        self.up_count = 0
+        self.down_count = 0
+
+        self.current_vehicles = 0
+
+        self.last_saved_second = -1
+
+        self.lock = threading.Lock()
+
+
+    def recv(self, frame):
+
+        img = frame.to_ndarray(
+            format="bgr24"
+        )
+
+        height, width = img.shape[:2]
+
+        line_y = int(height * 0.60)
+
+        results = self.model.track(
+            img,
+            persist=True,
+            tracker="bytetrack.yaml",
+            classes=VEHICLE_CLASSES,
+            conf=0.40,
+            verbose=False
+        )
+
+        result = results[0]
+
+        current_count = 0
+
+        cv2.line(
+            img,
+            (0, line_y),
+            (width, line_y),
+            (0, 0, 255),
+            3
+        )
+
+        if result.boxes.id is not None:
+
+            boxes = result.boxes.xyxy.cpu().numpy()
+            classes = result.boxes.cls.cpu().numpy()
+            track_ids = result.boxes.id.int().cpu().tolist()
+
+            current_count = len(track_ids)
+
+            for box, cls, track_id in zip(
+                boxes,
+                classes,
+                track_ids
+            ):
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    box
+                )
+
+                center_x = (x1 + x2) // 2
+                center_y = (y1 + y2) // 2
+
+                class_id = int(cls)
+
+                names = {
+                    2: "Car",
+                    3: "Motorcycle",
+                    5: "Bus",
+                    7: "Truck"
+                }
+
+                name = names.get(
+                    class_id,
+                    "Vehicle"
+                )
+
+                cv2.rectangle(
+                    img,
+                    (x1, y1),
+                    (x2, y2),
+                    (0, 255, 0),
+                    2
+                )
+
+                cv2.circle(
+                    img,
+                    (center_x, center_y),
+                    5,
+                    (255, 0, 0),
+                    -1
+                )
+
+                cv2.putText(
+                    img,
+                    f"{name} ID:{track_id}",
+                    (x1, max(y1 - 10, 20)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.55,
+                    (255, 255, 255),
+                    2
+                )
+
+                if track_id in self.previous_positions:
+
+                    previous_y = self.previous_positions[
+                        track_id
+                    ]
+
+                    # DOWN
+                    if (
+                        previous_y < line_y
+                        and center_y >= line_y
+                        and track_id not in self.counted_ids
+                    ):
+
+                        self.counted_ids.add(
+                            track_id
+                        )
+
+                        with self.lock:
+
+                            self.down_count += 1
+
+                            if class_id == 2:
+                                self.car_count += 1
+
+                            elif class_id == 3:
+                                self.motorcycle_count += 1
+
+                            elif class_id == 5:
+                                self.bus_count += 1
+
+                            elif class_id == 7:
+                                self.truck_count += 1
+
+                    # UP
+                    elif (
+                        previous_y > line_y
+                        and center_y <= line_y
+                        and track_id not in self.counted_ids
+                    ):
+
+                        self.counted_ids.add(
+                            track_id
+                        )
+
+                        with self.lock:
+
+                            self.up_count += 1
+
+                            if class_id == 2:
+                                self.car_count += 1
+
+                            elif class_id == 3:
+                                self.motorcycle_count += 1
+
+                            elif class_id == 5:
+                                self.bus_count += 1
+
+                            elif class_id == 7:
+                                self.truck_count += 1
+
+                self.previous_positions[
+                    track_id
+                ] = center_y
+
+        with self.lock:
+
+            self.current_vehicles = current_count
+
+            cars = self.car_count
+            motorcycles = self.motorcycle_count
+            buses = self.bus_count
+            trucks = self.truck_count
+            up = self.up_count
+            down = self.down_count
+
+        if current_count <= 5:
+
+            density = "LOW"
+
+        elif current_count <= 10:
+
+            density = "MEDIUM"
+
+        else:
+
+            density = "HIGH"
+
+        # Save once every 5 seconds
+        current_second = datetime.now().second
+
+        if (
+            current_second % 5 == 0
+            and current_second != self.last_saved_second
+        ):
+
+            self.last_saved_second = current_second
+
+            save_data(
+                cars,
+                motorcycles,
+                buses,
+                trucks,
+                up,
+                down,
+                current_count,
+                density
+            )
+
+        # Dashboard overlay
+
+        cv2.rectangle(
+            img,
+            (10, 10),
+            (330, 220),
+            (0, 0, 0),
+            -1
+        )
+
+        cv2.putText(
+            img,
+            f"Cars: {cars}",
+            (25, 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            f"Motorcycles: {motorcycles}",
+            (25, 75),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            f"Buses: {buses}",
+            (25, 105),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            f"Trucks: {trucks}",
+            (25, 135),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            f"UP: {up}  DOWN: {down}",
+            (25, 170),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            f"Density: {density}",
+            (25, 205),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 0),
+            2
+        )
+
+        return av.VideoFrame.from_ndarray(
+            img,
+            format="bgr24"
+        )
+
+
+st_autorefresh(
+    interval=1000,
+    key="traffic_refresh"
+)
+
+
+ctx = webrtc_streamer(
+    key="traffic-monitor",
+    video_processor_factory=TrafficProcessor,
+    media_stream_constraints={
+        "video": True,
+        "audio": False
+    },
+    async_processing=True
+)
+
+
+if ctx.video_processor:
+
+    processor = ctx.video_processor
+
+    with processor.lock:
+
+        cars = processor.car_count
+        motorcycles = processor.motorcycle_count
+        buses = processor.bus_count
+        trucks = processor.truck_count
+
+        up = processor.up_count
+        down = processor.down_count
+
+        current = processor.current_vehicles
+
+    total = (
         cars
+        + motorcycles
+        + buses
+        + trucks
     )
 
-with col2:
-    st.metric(
-        "🏍️ Motorcycles",
-        motorcycles
-    )
+    if current <= 5:
 
-with col3:
-    st.metric(
-        "🚌 Buses",
-        buses
-    )
+        density = "LOW"
 
-with col4:
-    st.metric(
-        "🚚 Trucks",
-        trucks
-    )
+    elif current <= 10:
 
-# -----------------------------
-# Total / Density
-# -----------------------------
+        density = "MEDIUM"
 
-st.divider()
+    else:
 
-col1, col2, col3 = st.columns(3)
+        density = "HIGH"
 
-with col1:
 
-    st.metric(
-        "🚘 Total Vehicles",
-        total
-    )
+    st.divider()
 
-with col2:
+    st.subheader("📊 Real-Time Statistics")
 
-    st.metric(
-        "🚦 Current Vehicles",
-        current
-    )
+    col1, col2, col3, col4 = st.columns(4)
 
-with col3:
+    with col1:
+        st.metric("🚗 Cars", cars)
 
-    st.metric(
-        "Traffic Density",
-        density
-    )
+    with col2:
+        st.metric(
+            "🏍️ Motorcycles",
+            motorcycles
+        )
 
-# -----------------------------
-# Direction
-# -----------------------------
+    with col3:
+        st.metric("🚌 Buses", buses)
 
-st.divider()
+    with col4:
+        st.metric("🚚 Trucks", trucks)
 
-st.subheader("Vehicle Direction")
 
-col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
 
-with col1:
+    with col1:
+        st.metric(
+            "🚘 Total",
+            total
+        )
 
-    st.metric(
-        "⬆️ UP",
-        up
-    )
+    with col2:
+        st.metric(
+            "🚦 Current",
+            current
+        )
 
-with col2:
+    with col3:
+        st.metric(
+            "⬆️ UP",
+            up
+        )
 
-    st.metric(
-        "⬇️ DOWN",
-        down
-    )
+    with col4:
+        st.metric(
+            "⬇️ DOWN",
+            down
+        )
 
-# -----------------------------
-# Vehicle Count Chart
-# -----------------------------
 
-st.divider()
+    st.subheader("🚦 Traffic Density")
 
-st.subheader("📊 Vehicle Count")
+    if density == "LOW":
+        st.success("LOW TRAFFIC")
 
-chart_data = data[
-    [
-        "Cars",
-        "Motorcycles",
-        "Buses",
-        "Trucks"
-    ]
-]
+    elif density == "MEDIUM":
+        st.warning("MEDIUM TRAFFIC")
 
-st.line_chart(chart_data)
+    else:
+        st.error("HIGH TRAFFIC")
 
-# -----------------------------
-# Total Traffic Chart
-# -----------------------------
 
-st.subheader("📈 Total Traffic")
+    st.divider()
 
-total_chart = data[
-    ["Total"]
-]
+    st.subheader("📥 Traffic Data")
 
-st.line_chart(total_chart)
+    if os.path.exists(CSV_FILE):
 
-# -----------------------------
-# Traffic Density Distribution
-# -----------------------------
+        with open(
+            CSV_FILE,
+            "rb"
+        ) as file:
 
-st.subheader("🚦 Traffic Density")
+            st.download_button(
+                "Download Traffic CSV",
+                file,
+                file_name="live_traffic_data.csv",
+                mime="text/csv"
+            )
 
-density_counts = (
-    data["Density"]
-    .value_counts()
-)
-
-st.bar_chart(density_counts)
-
-# -----------------------------
-# Recent Records
-# -----------------------------
-
-st.subheader("📋 Recent Traffic Records")
-
-st.dataframe(
-    data.tail(20),
-    use_container_width=True
-)
-
-# -----------------------------
-# Download CSV
-# -----------------------------
-
-st.subheader("📥 Download Data")
-
-with open(CSV_FILE, "rb") as file:
-
-    st.download_button(
-        label="Download Traffic CSV",
-        data=file,
-        file_name="traffic_data.csv",
-        mime="text/csv"
-    )
-
-# -----------------------------
-# Refresh
-# -----------------------------
-
-st.divider()
-
-if st.button("🔄 Refresh Dashboard"):
-
-    st.rerun()
+        st.success(
+            f"Data saved to `{CSV_FILE}`"
+        )
