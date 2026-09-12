@@ -22,37 +22,43 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# Enterprise Dark Theme Styling
+# Enterprise Dark Theme & Glassmorphism Styling
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
     
-    /* Main App Background */
+    /* Main App Background with ambient dark radial glow */
     .stApp {
-        background-color: #0F172A !important;
+        background-color: #0B0F17 !important;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.06) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%) !important;
         color: #F8FAFC !important;
     }
     
     header[data-testid="stHeader"] {
-        background-color: #0F172A !important;
-        border-bottom: 1px solid #1E293B;
+        background-color: rgba(11, 15, 23, 0.75) !important;
+        backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     }
     
     .main .block-container {
-        padding-top: 1.2rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
         max-width: 98% !important;
     }
     
     /* Sidebar Overrides */
     section[data-testid="stSidebar"] {
-        background-color: #090D16 !important;
-        border-right: 1px solid #1E293B !important;
+        background-color: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(16px) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
@@ -63,144 +69,291 @@ st.markdown("""
         color: #CBD5E1 !important;
     }
 
+    .sidebar-brand-container {
+        padding: 14px 16px;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        margin-bottom: 18px;
+    }
+    
     .sidebar-brand {
-        font-size: 20px;
-        font-weight: 700;
-        color: #FFFFFF !important;
-        letter-spacing: -0.3px;
+        font-size: 21px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #FFFFFF 0%, #93C5FD 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
         margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .sidebar-sub {
-        font-size: 12px;
+        font-size: 11px;
         color: #64748B !important;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        font-weight: 600;
     }
 
-    /* Top Control Banner */
+    .sidebar-card {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+    }
+
+    /* Executive Top Banner */
     .control-header {
-        background-color: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 8px;
-        padding: 16px 24px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 14px;
+        padding: 20px 28px;
+        margin-bottom: 22px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     }
     
     .control-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: #FFFFFF;
+        font-size: 22px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0;
+        letter-spacing: -0.4px;
     }
     
     .control-sub {
-        font-size: 13px;
+        font-size: 13.5px;
         color: #94A3B8;
-        margin-top: 2px;
+        margin-top: 4px;
+        font-weight: 400;
     }
 
-    /* Status Indicator Dot */
+    .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        background: rgba(37, 99, 235, 0.15);
+        border: 1px solid rgba(37, 99, 235, 0.3);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #60A5FA;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 6px;
+    }
+
+    /* Glowing Live Status Indicator */
+    .live-pulse {
+        height: 7px;
+        width: 7px;
+        background-color: #22C55E;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 10px #22C55E;
+        animation: pulse_glow 2s infinite;
+    }
+
+    @keyframes pulse_glow {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
     .status-dot {
         height: 8px;
         width: 8px;
         background-color: #22C55E;
         border-radius: 50%;
         display: inline-block;
-        margin-right: 6px;
+        margin-right: 8px;
+        box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
     }
 
-    /* Custom Tabs */
+    /* Custom Navigation Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 4px !important;
-        background-color: #1E293B !important;
-        padding: 4px !important;
-        border-radius: 6px !important;
-        border: 1px solid #334155 !important;
+        gap: 6px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        backdrop-filter: blur(12px) !important;
+        padding: 5px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 18px !important;
     }
     
     .stTabs [data-baseweb="tab"] {
-        height: 38px !important;
+        height: 40px !important;
         background-color: transparent !important;
-        border-radius: 4px !important;
+        border-radius: 8px !important;
         color: #94A3B8 !important;
         font-weight: 600 !important;
-        font-size: 13px !important;
-        padding: 0 16px !important;
+        font-size: 13.5px !important;
+        padding: 0 22px !important;
         border: none !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: #2563EB !important;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
         color: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
     }
     
-    /* Metric Cards */
+    /* High-Tech Telemetry Cards */
     .metric-card {
-        background-color: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 8px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.08);
+    }
+
+    .metric-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     
     .metric-label {
-        font-size: 11px;
+        font-size: 11.5px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         color: #94A3B8;
     }
+
+    .metric-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .icon-indigo { background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); color: #818CF8; }
+    .icon-cyan { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); color: #38BDF8; }
+    .icon-amber { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #F59E0B; }
+    .icon-purple { background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.25); color: #A78BFA; }
+    .icon-emerald { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); color: #10B981; }
+    .icon-rose { background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.25); color: #F43F5E; }
     
     .metric-val {
-        font-size: 26px;
-        font-weight: 700;
+        font-size: 28px;
+        font-weight: 800;
         color: #F8FAFC;
-        margin-top: 4px;
+        margin-top: 6px;
+        letter-spacing: -0.5px;
     }
 
+    .val-indigo { color: #818CF8; }
     .val-cyan { color: #38BDF8; }
     .val-amber { color: #F59E0B; }
-    .val-purple { color: #A78BFA; }
-    .val-emerald { color: #10B981; }
-    .val-rose { color: #F43F5E; }
+    .val-purple { color: #C084FC; }
+    .val-emerald { color: #34D399; }
+    .val-rose { color: #FB7185; }
 
-    /* Density Badges */
+    /* Density Tags */
     .density-tag {
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 11.5px;
         font-weight: 700;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.6px;
     }
     .density-low {
-        background-color: rgba(34, 197, 94, 0.15);
+        background-color: rgba(34, 197, 94, 0.12);
         color: #4ADE80;
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        border: 1px solid rgba(34, 197, 94, 0.25);
     }
     .density-medium {
-        background-color: rgba(245, 158, 11, 0.15);
+        background-color: rgba(245, 158, 11, 0.12);
         color: #FBBF24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        border: 1px solid rgba(245, 158, 11, 0.25);
     }
     .density-high {
-        background-color: rgba(239, 68, 68, 0.15);
+        background-color: rgba(239, 68, 68, 0.12);
         color: #F87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        border: 1px solid rgba(239, 68, 68, 0.25);
     }
 
     .section-label {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #E2E8F0;
-        margin-bottom: 12px;
+        letter-spacing: 0.7px;
+        color: #CBD5E1;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-label::before {
+        content: "";
+        display: inline-block;
+        width: 3px;
+        height: 14px;
+        background: #3B82F6;
+        border-radius: 2px;
+    }
+
+    /* Container Glass Panel */
+    .glass-panel {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Download Button override */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 10px !important;
+        padding: 10px 24px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+    }
+    .stDownloadButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45) !important;
+    }
+
+    /* Dataframe Table styling */
+    [data-testid="stDataFrame"] {
+        background: rgba(15, 23, 42, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -365,45 +518,88 @@ class TrafficProcessor(VideoProcessorBase):
 # ---------------------------------------------------------
 # Sidebar System Controls
 # ---------------------------------------------------------
+# Sidebar System Controls
+# ---------------------------------------------------------
 with st.sidebar:
     st.markdown("""
-    <div style="padding: 10px 0 15px 0; border-bottom: 1px solid #1E293B;">
-        <div class="sidebar-brand">VehixAI Systems</div>
-        <div class="sidebar-sub">Traffic Control Center</div>
+    <div class="sidebar-brand-container">
+        <div class="sidebar-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="8" rx="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            VehixAI Core
+        </div>
+        <div class="sidebar-sub">Traffic Operations Center</div>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown('<div class="metric-label">System Architecture</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="font-size: 13px; color: #94A3B8; margin-top: 8px; line-height: 1.6;">
-        <div><span class="status-dot"></span><b>Inference:</b> YOLO PyTorch</div>
-        <div><span class="status-dot"></span><b>Tracker:</b> ByteTrack</div>
-        <div><span class="status-dot"></span><b>Ingestion:</b> OpenCV / WebRTC</div>
+    <div class="sidebar-card">
+        <div class="metric-label" style="margin-bottom: 8px;">Architecture Specifications</div>
+        <div style="font-size: 12.5px; color: #CBD5E1; line-height: 1.8;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span><span class="status-dot"></span><b>Inference</b></span>
+                <span style="color: #60A5FA; font-weight: 600;">YOLOv8 PyTorch</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span><span class="status-dot"></span><b>Tracking Engine</b></span>
+                <span style="color: #34D399; font-weight: 600;">ByteTrack</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span><span class="status-dot"></span><b>Stream Protocol</b></span>
+                <span style="color: #FBBF24; font-weight: 600;">OpenCV / WebRTC</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="metric-label">Density Threshold Config</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="font-size: 12px; color: #64748B; margin-top: 8px; line-height: 1.6;">
-        • <b>Low:</b> 0 – 5 vehicles<br>
-        • <b>Medium:</b> 6 – 10 vehicles<br>
-        • <b>High:</b> 11+ vehicles
+    <div class="sidebar-card">
+        <div class="metric-label" style="margin-bottom: 8px;">Density Threshold Profiling</div>
+        <div style="font-size: 12px; color: #94A3B8; line-height: 1.7;">
+            <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+                <span style="color: #4ADE80; font-weight: 600;">● Low Flow</span>
+                <span>0 – 5 vehicles</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+                <span style="color: #FBBF24; font-weight: 600;">● Medium Flow</span>
+                <span>6 – 10 vehicles</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+                <span style="color: #F87171; font-weight: 600;">● High Density</span>
+                <span>11+ vehicles</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown(f"<p style='font-size: 11px; color: #475569;'>System Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="padding: 12px 16px; background: rgba(15, 23, 42, 0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); margin-top: 20px;">
+        <div style="font-size: 10.5px; color: #64748B; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">System Runtime Clock</div>
+        <div style="font-size: 12.5px; color: #94A3B8; font-weight: 600; margin-top: 2px;">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# Header Banner
+# Executive Top Header Banner
 # ---------------------------------------------------------
 st.markdown("""
 <div class="control-header">
     <div>
-        <div class="control-title">VehixAI Traffic Monitoring Center</div>
-        <div class="control-sub">Real-Time Vehicle Analytics, Directional Tracking, and Density Profiling</div>
+        <div class="brand-badge">
+            <span class="live-pulse"></span> SYSTEM ONLINE
+        </div>
+        <div class="control-title">VehixAI Intelligent Traffic Analytics Platform</div>
+        <div class="control-sub">Real-Time Autonomous Multi-Vehicle Telemetry, Flow Profiling, and Directional Tracking</div>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="padding: 8px 16px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: right;">
+            <div style="font-size: 10px; color: #64748B; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Inference Latency</div>
+            <div style="font-size: 13px; color: #34D399; font-weight: 700;">Real-Time <span style="font-size: 10px; color: #94A3B8;">(GPU/CPU)</span></div>
+        </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -412,19 +608,19 @@ st.markdown("""
 # Main Interface Tabs
 # ---------------------------------------------------------
 tab_feed, tab_analytics, tab_logs = st.tabs([
-    "Live Video Feed", 
-    "Analytics & Distribution", 
-    "Telemetry Logs"
+    "📹 Live Camera Feed & Telemetry", 
+    "📊 Flow Analytics & Trends", 
+    "📁 Telemetry Data Logs"
 ])
 
 cars, motorcycles, buses, trucks, up, down, current, total = 0, 0, 0, 0, 0, 0, 0, 0
 density = "LOW"
 
 with tab_feed:
-    col_left, col_right = st.columns([1.5, 1])
+    col_left, col_right = st.columns([1.55, 1])
 
     with col_left:
-        st.markdown('<div class="section-label">Camera Stream Ingestion</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Live Camera Stream & Object Detection</div>', unsafe_allow_html=True)
         ctx = webrtc_streamer(
             key="traffic-monitor",
             video_processor_factory=TrafficProcessor,
@@ -447,14 +643,19 @@ with tab_feed:
         density = "LOW" if current <= 5 else ("MEDIUM" if current <= 10 else "HIGH")
 
     with col_right:
-        st.markdown('<div class="section-label">Real-Time Telemetry</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Real-Time Telemetry Breakdown</div>', unsafe_allow_html=True)
 
         r1, r2 = st.columns(2)
         with r1:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Total Volume</div>
-                <div class="metric-val">{total}</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Total Volume</div>
+                    <div class="metric-icon-badge icon-indigo">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    </div>
+                </div>
+                <div class="metric-val val-indigo">{total}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -462,9 +663,16 @@ with tab_feed:
             d_class = "density-low" if density == "LOW" else ("density-medium" if density == "MEDIUM" else "density-high")
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Traffic Density</div>
-                <div style="margin-top: 6px;">
-                    <span class="density-tag {d_class}">{density} ({current} Active)</span>
+                <div class="metric-card-top">
+                    <div class="metric-label">Traffic Density</div>
+                    <div class="metric-icon-badge icon-emerald">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <span class="density-tag {d_class}">
+                        <span class="live-pulse" style="width:5px; height:5px;"></span> {density} ({current} Active)
+                    </span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -473,14 +681,24 @@ with tab_feed:
         with c1:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Cars</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Cars</div>
+                    <div class="metric-icon-badge icon-cyan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7c-.7 0-1.3.3-1.8.7C4.3 8.6 3 10 3 10s-2.7.6-4.5 1.1C.7 11.3 0 12.1 0 13v3c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-cyan">{cars}</div>
             </div>
             """, unsafe_allow_html=True)
 
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Buses</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Buses</div>
+                    <div class="metric-icon-badge icon-purple">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="15" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><circle cx="7" cy="15" r="1"></circle><circle cx="17" cy="15" r="1"></circle></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-purple">{buses}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -488,14 +706,24 @@ with tab_feed:
         with c2:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Motorcycles</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Motorcycles</div>
+                    <div class="metric-icon-badge icon-amber">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="18.5" cy="17.5" r="3.5"></circle><path d="M15 6h2.5l2.5 4.5M9 17.5L12 8h4.5l2 4"></path></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-amber">{motorcycles}</div>
             </div>
             """, unsafe_allow_html=True)
 
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Trucks</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Trucks</div>
+                    <div class="metric-icon-badge icon-emerald">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-emerald">{trucks}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -504,7 +732,12 @@ with tab_feed:
         with f1:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Northbound (UP)</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Northbound (UP)</div>
+                    <div class="metric-icon-badge icon-cyan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-cyan">{up}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -512,7 +745,12 @@ with tab_feed:
         with f2:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">Southbound (DOWN)</div>
+                <div class="metric-card-top">
+                    <div class="metric-label">Southbound (DOWN)</div>
+                    <div class="metric-icon-badge icon-rose">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    </div>
+                </div>
                 <div class="metric-val val-rose">{down}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -521,7 +759,7 @@ with tab_feed:
 # Tab 2: Analytics & Visualizations
 # ---------------------------------------------------------
 with tab_analytics:
-    st.markdown('<div class="section-label">Traffic Distribution Analytics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Traffic Distribution & Class Distribution</div>', unsafe_allow_html=True)
     
     chart_col1, chart_col2 = st.columns(2)
 
@@ -534,37 +772,57 @@ with tab_analytics:
         fig_donut = px.pie(
             names=labels,
             values=values,
-            hole=0.6,
-            title="Vehicle Category Breakdown",
-            color_discrete_sequence=['#38BDF8', '#F59E0B', '#A78BFA', '#10B981']
+            hole=0.62,
+            title="Vehicle Class Share",
+            color_discrete_sequence=['#38BDF8', '#F59E0B', '#C084FC', '#34D399']
+        )
+        fig_donut.update_traces(
+            hoverinfo='label+percent+value',
+            textinfo='percent',
+            marker=dict(line=dict(color='#0B0F17', width=2))
         )
         fig_donut.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(15, 23, 42, 0.4)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#F8FAFC', family="Inter"),
-            margin=dict(t=40, b=20, l=20, r=20),
-            legend=dict(orientation="h", yanchor="bottom", y=-0.15)
+            font=dict(color='#F8FAFC', family="Plus Jakarta Sans"),
+            margin=dict(t=50, b=30, l=20, r=20),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(color="#CBD5E1")),
+            title_font=dict(size=16, color="#F8FAFC")
         )
         st.plotly_chart(fig_donut, width='stretch')
 
     with chart_col2:
         fig_flow = go.Figure(data=[
-            go.Bar(name='Northbound (UP)', x=['Directional Traffic'], y=[up], marker_color='#38BDF8'),
-            go.Bar(name='Southbound (DOWN)', x=['Directional Traffic'], y=[down], marker_color='#F43F5E')
+            go.Bar(
+                name='Northbound (UP)',
+                x=['Directional Volume'],
+                y=[up],
+                marker_color='#38BDF8',
+                marker_line=dict(color='rgba(56, 189, 248, 0.5)', width=1.5)
+            ),
+            go.Bar(
+                name='Southbound (DOWN)',
+                x=['Directional Volume'],
+                y=[down],
+                marker_color='#FB7185',
+                marker_line=dict(color='rgba(251, 113, 133, 0.5)', width=1.5)
+            )
         ])
         fig_flow.update_layout(
-            title="Directional Traffic Volume",
+            title="Directional Traffic Breakdown",
             barmode='group',
-            paper_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(15, 23, 42, 0.4)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#F8FAFC', family="Inter"),
-            margin=dict(t=40, b=20, l=20, r=20),
-            legend=dict(orientation="h", yanchor="bottom", y=-0.15)
+            font=dict(color='#F8FAFC', family="Plus Jakarta Sans"),
+            margin=dict(t=50, b=30, l=20, r=20),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(color="#CBD5E1")),
+            yaxis=dict(showgrid=True, gridcolor='rgba(255, 255, 255, 0.06)', zeroline=False),
+            title_font=dict(size=16, color="#F8FAFC")
         )
         st.plotly_chart(fig_flow, width='stretch')
 
-    st.divider()
-    st.markdown('<div class="section-label">Time Series Traffic Trend</div>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Historical Time Series Traffic Trend</div>', unsafe_allow_html=True)
 
     target_csv = CSV_FILE if os.path.exists(CSV_FILE) else (HISTORICAL_CSV if os.path.exists(HISTORICAL_CSV) else None)
 
@@ -577,28 +835,30 @@ with tab_analytics:
                     df,
                     x='Timestamp',
                     y=['Cars', 'Motorcycles', 'Buses', 'Trucks'],
-                    title="Historical Vehicle Counts",
-                    color_discrete_map={'Cars': '#38BDF8', 'Motorcycles': '#F59E0B', 'Buses': '#A78BFA', 'Trucks': '#10B981'}
+                    title="Time-Series Vehicle Counts",
+                    color_discrete_map={'Cars': '#38BDF8', 'Motorcycles': '#F59E0B', 'Buses': '#C084FC', 'Trucks': '#34D399'}
                 )
                 fig_trend.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(15, 23, 42, 0.6)',
-                    font=dict(color='#F8FAFC', family="Inter"),
-                    xaxis=dict(showgrid=False),
-                    yaxis=dict(showgrid=True, gridcolor='#334155'),
-                    margin=dict(t=40, b=20, l=20, r=20)
+                    paper_bgcolor='rgba(15, 23, 42, 0.4)',
+                    plot_bgcolor='rgba(11, 15, 23, 0.6)',
+                    font=dict(color='#F8FAFC', family="Plus Jakarta Sans"),
+                    xaxis=dict(showgrid=False, gridcolor='rgba(255, 255, 255, 0.06)'),
+                    yaxis=dict(showgrid=True, gridcolor='rgba(255, 255, 255, 0.06)'),
+                    margin=dict(t=50, b=30, l=20, r=20),
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.25, font=dict(color="#CBD5E1")),
+                    title_font=dict(size=16, color="#F8FAFC")
                 )
                 st.plotly_chart(fig_trend, width='stretch')
         except Exception:
             st.info("Loading time series dataset...")
     else:
-        st.info("Telemetry data logging active. Time-series chart populates automatically.")
+        st.info("Telemetry logging active. Time-series chart populates automatically as data streams in.")
 
 # ---------------------------------------------------------
 # Tab 3: Data Export
 # ---------------------------------------------------------
 with tab_logs:
-    st.markdown('<div class="section-label">Live Telemetry Logs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Real-Time Telemetry Log Records</div>', unsafe_allow_html=True)
 
     target_csv = CSV_FILE if os.path.exists(CSV_FILE) else (HISTORICAL_CSV if os.path.exists(HISTORICAL_CSV) else None)
 
@@ -609,11 +869,11 @@ with tab_logs:
         st.markdown("<br>", unsafe_allow_html=True)
         with open(target_csv, "rb") as file:
             st.download_button(
-                label="Download Log Dataset (CSV)",
+                label="📥 Export Full Telemetry Log Dataset (CSV)",
                 data=file,
                 file_name=f"vehixai_telemetry_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
                 width='stretch'
             )
     else:
-        st.warning("No telemetry log records available.")
+        st.warning("No telemetry log records available yet.")
